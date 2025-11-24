@@ -4,7 +4,7 @@ from typing import Any
 import stripe
 import os
 from app.core.database import get_db
-from app.api.v1.endpoints.auth import get_current_active_user
+from app.api.deps import get_current_active_user
 from app.models.user import User
 from app.models.subscription import Subscription
 

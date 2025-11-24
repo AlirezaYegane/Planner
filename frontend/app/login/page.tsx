@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAppDispatch } from '@/store/store';
 import { setToken } from '@/store/slices/userSlice';
-import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -13,175 +12,326 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [fieldValidation, setFieldValidation] = useState({
+        email: false,
+        password: false
+    });
     const router = useRouter();
     const dispatch = useAppDispatch();
 
-    // Clear any stale state on mount
     useEffect(() => {
         setError('');
-        console.log('Login Page Mounted - Premium UI Loaded');
     }, []);
+
+    const validateEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setEmail(value);
+        setFieldValidation(prev => ({
+            ...prev,
+            email: validateEmail(value)
+        }));
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setPassword(value);
+        setFieldValidation(prev => ({
+            ...prev,
+            password: value.length >= 6
+        }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
-        console.log('Attempting login...');
 
         try {
             const token = await api.login({ email, password });
-            console.log('Login response received:', token);
 
             if (token && token.access_token) {
                 dispatch(setToken(token.access_token));
-                console.log('Token dispatched, redirecting...');
-                // Force a hard redirect to ensure dashboard loads cleanly
                 window.location.href = '/dashboard';
             } else {
                 throw new Error('Invalid response from server');
             }
         } catch (err: any) {
-            console.error('Login error:', err);
             setError(err.response?.data?.detail || 'Invalid email or password. Please try again.');
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen w-full bg-[#0F172A] text-white flex items-center justify-center p-4 lg:p-0 overflow-hidden font-sans">
-            {/* Background Gradients */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
-            </div>
+        <div className="min-h-screen w-full bg-[#F7F9FC] flex items-center justify-center p-4 md:p-8">
+            {/* Main Card Container */}
+            <div className="w-full max-w-[940px] bg-white rounded-[24px] shadow-[0_8px_32px_rgba(36,107,253,0.08)] overflow-hidden flex flex-col md:flex-row">
 
-            <div className="w-full max-w-[1440px] h-screen lg:h-[90vh] lg:max-h-[900px] lg:m-8 bg-slate-900/40 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden z-10 flex flex-col lg:flex-row">
-
-                {/* Left Panel: Login Form */}
-                <div className="w-full lg:w-1/2 h-full flex flex-col p-8 lg:p-16 xl:p-24 relative">
-                    {/* Logo */}
-                    <div className="flex items-center gap-3 mb-12">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                            <CheckCircle2 className="w-6 h-6 text-white" />
-                        </div>
-                        <span className="text-xl font-bold tracking-tight">Deep Focus</span>
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+                {/* LEFT PANEL - Form Area */}
+                <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+                    <div className="max-w-[360px] mx-auto w-full">
+                        {/* Header */}
                         <div className="mb-8">
-                            <h1 className="text-3xl lg:text-4xl font-bold mb-3 text-white">Welcome back</h1>
-                            <p className="text-slate-400">
-                                Enter your credentials to access your workspace.
+                            <h1 className="text-[28px] md:text-[32px] font-bold text-[#1A202C] mb-2 leading-tight" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                Welcome back
+                            </h1>
+                            <p className="text-[#718096] text-[15px]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                Continue your planning journey.
                             </p>
                         </div>
 
+                        {/* Error Message */}
                         {error && (
-                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
-                                <div className="w-1.5 h-1.5 mt-2 bg-red-500 rounded-full shrink-0" />
-                                <p className="text-sm text-red-400">{error}</p>
+                            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 animate-shake">
+                                {error}
                             </div>
                         )}
 
+                        {/* Form */}
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Email</label>
-                                <div className="relative group">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                            {/* Email Field */}
+                            <div>
+                                <label className="block text-[#4A5568] text-[13px] font-medium mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Email
+                                </label>
+                                <div className="relative">
                                     <input
                                         type="email"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                        placeholder="name@company.com"
+                                        onChange={handleEmailChange}
                                         required
+                                        className={`w-full px-4 py-3 bg-white border rounded-lg text-[#2D3748] placeholder-[#A0AEC0] focus:outline-none focus:border-[#246BFD] focus:ring-2 focus:ring-[#246BFD]/10 transition-all ${email && (fieldValidation.email ? 'border-[#10B981] pr-12' : 'border-[#E2E8F0]')
+                                            } ${!email && 'border-[#E2E8F0]'}`}
+                                        placeholder="Enter your email"
+                                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                                     />
+                                    {email && fieldValidation.email && (
+                                        <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#10B981] animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between ml-1">
-                                    <label className="text-sm font-medium text-slate-300">Password</label>
-                                    <a href="#" className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">Forgot password?</a>
+                            {/* Password Field */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-[#4A5568] text-[13px] font-medium" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                        Password
+                                    </label>
+                                    <a href="#" className="text-[12px] text-[#246BFD] hover:text-[#1E4DD8] font-medium transition-colors" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                        Forgot password?
+                                    </a>
                                 </div>
-                                <div className="relative group">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                <div className="relative">
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-3.5 pl-12 pr-12 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                        placeholder="Enter your password"
+                                        onChange={handlePasswordChange}
                                         required
+                                        className={`w-full px-4 py-3 bg-white border rounded-lg text-[#2D3748] placeholder-[#A0AEC0] focus:outline-none focus:border-[#246BFD] focus:ring-2 focus:ring-[#246BFD]/10 transition-all pr-20 ${password && (fieldValidation.password ? 'border-[#10B981]' : 'border-[#E2E8F0]')
+                                            } ${!password && 'border-[#E2E8F0]'}`}
+                                        placeholder="Enter your password"
+                                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        {password && fieldValidation.password && (
+                                            <svg className="w-5 h-5 text-[#10B981] animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="text-[#718096] hover:text-[#246BFD] transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
+                            {/* Login Button */}
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/20 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                                className="w-full bg-gradient-to-r from-[#246BFD] to-[#1E4DD8] hover:from-[#1E4DD8] hover:to-[#246BFD] text-white font-semibold py-3.5 rounded-lg transition-all duration-200 shadow-lg shadow-[#246BFD]/20 hover:shadow-xl hover:shadow-[#246BFD]/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                             >
                                 {loading ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        <span>Signing in...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>Sign in</span>
-                                        <ArrowRight className="w-5 h-5" />
-                                    </>
-                                )}
+                                    <span className="flex items-center justify-center gap-2">
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Signing in...
+                                    </span>
+                                ) : 'Log in'}
                             </button>
+
+                            {/* Sign up link */}
+                            <div className="text-center">
+                                <p className="text-[13px] text-[#718096]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Don't have an account?{' '}
+                                    <a href="/signup" className="text-[#246BFD] hover:text-[#1E4DD8] font-semibold transition-colors">
+                                        Create account
+                                    </a>
+                                </p>
+                            </div>
+
+                            {/* Footer Attribution */}
+                            <div className="pt-4 text-center border-t border-gray-100">
+                                <p className="text-[11px] text-[#A0AEC0]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Designed by <span className="font-medium text-[#718096]">Alireza Yegane</span>
+                                </p>
+                            </div>
                         </form>
-
-                        <div className="mt-8 text-center">
-                            <p className="text-slate-400 text-sm">
-                                Don't have an account?{' '}
-                                <a href="/signup" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-                                    Create account
-                                </a>
-                            </p>
-                        </div>
-
-                        {/* Demo Credentials */}
-                        <div className="mt-8 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
-                            <p className="text-xs text-slate-400 text-center">
-                                <span className="font-semibold text-slate-300">Demo Access:</span> admin@planner.app / admin123
-                            </p>
-                        </div>
                     </div>
                 </div>
 
-                {/* Right Panel: Visual/Marketing */}
-                <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 to-indigo-900 relative overflow-hidden items-center justify-center p-12">
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+                {/* RIGHT PANEL - Premium Dashboard Preview Animation */}
+                <div className="w-full md:w-1/2 bg-gradient-to-br from-[#246BFD] via-[#1E4DD8] to-[#1956C7] relative overflow-hidden min-h-[400px] md:min-h-full flex items-center justify-center p-8">
+                    {/* Animated Background Elements */}
+                    <div className="absolute inset-0">
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+                        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+                        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-white/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '3s' }}></div>
+                    </div>
 
-                    {/* Abstract Shapes */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/10 rounded-full animate-[spin_60s_linear_infinite]" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-white/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
+                    {/* Main Content */}
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                        {/* Dashboard Preview Animation */}
+                        <div className="relative mb-12">
+                            {/* Animated Dashboard Elements */}
+                            <svg className="w-48 h-48" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {/* Calendar/Schedule Grid */}
+                                <g className="animate-float" style={{ animationDelay: '0s' }}>
+                                    <rect x="30" y="30" width="140" height="140" rx="8" fill="white" opacity="0.15" stroke="white" strokeWidth="2" />
+                                    <rect x="30" y="30" width="140" height="30" rx="8" fill="white" opacity="0.25" />
 
-                    <div className="relative z-10 max-w-md text-center">
-                        <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex items-center justify-center mx-auto mb-8 shadow-2xl">
-                            <CheckCircle2 className="w-10 h-10 text-white" />
+                                    {/* Grid Lines */}
+                                    <line x1="30" y1="80" x2="170" y2="80" stroke="white" strokeWidth="1" opacity="0.3" />
+                                    <line x1="30" y1="110" x2="170" y2="110" stroke="white" strokeWidth="1" opacity="0.3" />
+                                    <line x1="30" y1="140" x2="170" y2="140" stroke="white" strokeWidth="1" opacity="0.3" />
+
+                                    <line x1="100" y1="60" x2="100" y2="170" stroke="white" strokeWidth="1" opacity="0.3" />
+                                </g>
+
+                                {/* Checkmarks - Tasks Complete */}
+                                <g className="tasks">
+                                    <circle cx="60" cy="95" r="8" fill="#10B981" className="animate-check-pop" style={{ animationDelay: '0.5s' }} />
+                                    <path d="M56 95 L59 98 L64 92" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-check-pop" style={{ animationDelay: '0.6s' }} />
+
+                                    <circle cx="60" cy="125" r="8" fill="#10B981" className="animate-check-pop" style={{ animationDelay: '0.8s' }} />
+                                    <path d="M56 125 L59 128 L64 122" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-check-pop" style={{ animationDelay: '0.9s' }} />
+
+                                    <circle cx="130" cy="95" r="8" fill="#246BFD" opacity="0.3" className="animate-pulse" />
+                                    <circle cx="130" cy="125" r="8" fill="#246BFD" opacity="0.3" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
+                                </g>
+
+                                {/* Progress Bar */}
+                                <g className="animate-float" style={{ animationDelay: '0.3s' }}>
+                                    <rect x="50" y="155" width="100" height="8" rx="4" fill="white" opacity="0.2" />
+                                    <rect x="50" y="155" width="70" height="8" rx="4" fill="#10B981" className="animate-progress" />
+                                </g>
+                            </svg>
                         </div>
-                        <h2 className="text-3xl font-bold text-white mb-6 leading-tight">
-                            Master your productivity with Deep Focus
-                        </h2>
-                        <p className="text-blue-100/80 text-lg leading-relaxed">
-                            Join thousands of professionals who use our platform to organize their life and work efficiently.
-                        </p>
+
+                        {/* Welcome Text */}
+                        <div className="text-center space-y-4 max-w-sm">
+                            <h3 className="text-white text-3xl font-bold leading-tight animate-fade-in-up" style={{ fontFamily: 'Inter, system-ui, sans-serif', animationDelay: '0.2s' }}>
+                                Welcome Back
+                            </h3>
+                            <p className="text-white/90 text-base leading-relaxed animate-fade-in-up" style={{ fontFamily: 'Inter, system-ui, sans-serif', animationDelay: '0.4s' }}>
+                                Your tasks and goals are waiting. Let's continue where you left off.
+                            </p>
+
+                            {/* Stats Pills */}
+                            <div className="flex flex-wrap gap-2 justify-center pt-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm border border-white/20" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    ✓ Stay focused
+                                </div>
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm border border-white/20" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    ✓ Track progress
+                                </div>
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm border border-white/20" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    ✓ Achieve goals
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Custom CSS Animations */}
+            <style jsx>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-8px); }
+                }
+                @keyframes check-pop {
+                    0% { opacity: 0; transform: scale(0); }
+                    50% { transform: scale(1.2); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                @keyframes progress {
+                    from { width: 0; }
+                    to { width: 70px; }
+                }
+                @keyframes scale-in {
+                    0% { opacity: 0; transform: scale(0); }
+                    50% { transform: scale(1.2); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                @keyframes fade-in-up {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .animate-float {
+                    animation: float 3s ease-in-out infinite;
+                }
+                .animate-check-pop {
+                    animation: check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                    opacity: 0;
+                }
+                .animate-progress {
+                    animation: progress 2s ease-out forwards;
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .animate-shake {
+                    animation: shake 0.4s ease-in-out;
+                }
+                .animate-fade-in-up {
+                    animation: fade-in-up 0.8s ease-out forwards;
+                    opacity: 0;
+                }
+            `}</style>
         </div>
     );
 }

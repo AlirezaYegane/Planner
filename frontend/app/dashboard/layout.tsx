@@ -15,11 +15,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     const navItems = [
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/dashboard/planner', label: 'Daily Planner', icon: Calendar },
+        { href: '/dashboard/daily-plan', label: 'Daily Planner', icon: Calendar },
         { href: '/dashboard/kanban', label: 'Kanban Board', icon: LayoutGrid },
-        { href: '/dashboard/checklist', label: 'Checklist', icon: CheckSquare },
         { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-        { href: '/dashboard/history', label: 'History', icon: History },
     ];
 
     return (

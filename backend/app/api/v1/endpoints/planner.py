@@ -3,16 +3,17 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app.models.task import Task
+from app.models.user import User
 from app.api import deps
 
 router = APIRouter()
 
-@router.post("/reschedule-overdue", response_model=List[schemas.Task])
+@router.post("/reschedule-overdue")
 def reschedule_overdue_tasks(
     db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
+    current_user: User = Depends(deps.get_current_active_user),
+):
     """
     Smart Reschedule: Move all overdue tasks to today/tomorrow.
     """
@@ -21,10 +22,10 @@ def reschedule_overdue_tasks(
     # For this prototype, we'll just grab tasks with due_date < today
     
     today = datetime.utcnow().date()
-    tasks = db.query(models.Task).filter(
-        models.Task.owner_id == current_user.id,
-        models.Task.status != "done",
-        models.Task.due_date < today
+    tasks = db.query(Task).filter(
+        Task.owner_id == current_user.id,
+        Task.status != "done",
+        Task.due_date < today
     ).all()
     
     rescheduled_tasks = []

@@ -3,26 +3,35 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 export default function SignupPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [fullName, setFullName] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        mobile: '',
+        password: ''
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [fieldValidation, setFieldValidation] = useState({
+        name: false,
+        email: false,
+        mobile: false,
+        password: false
+    });
     const router = useRouter();
 
-    const getPasswordStrength = (pwd: string) => {
-        if (pwd.length === 0) return { label: '', color: 'text-neutral-400', width: '0%' };
-        if (pwd.length < 6) return { label: 'Too short', color: 'text-red-500', width: '25%' };
-        if (pwd.length < 8) return { label: 'Weak', color: 'text-orange-500', width: '50%' };
-        if (pwd.length < 12) return { label: 'Good', color: 'text-emerald-500', width: '75%' };
-        return { label: 'Strong', color: 'text-emerald-600', width: '100%' };
+    const validateEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
 
-    const passwordStrength = getPasswordStrength(password);
+    const getPasswordStrength = (password: string) => {
+        if (password.length === 0) return 0;
+        if (password.length < 6) return 1;
+        if (password.length < 10) return 2;
+        if (password.length >= 10 && /[A-Z]/.test(password) && /[0-9]/.test(password)) return 3;
+        return 2;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,10 +39,19 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            await api.signup({ email, password, full_name: fullName });
+            await api.signup({
+                email: formData.email,
+                password: formData.password,
+                full_name: formData.name
+            });
             // Auto-login after signup
-            await api.login({ email, password });
-            router.push('/dashboard');
+            const token = await api.login({
+                email: formData.email,
+                password: formData.password
+            });
+            if (token?.access_token) {
+                router.push('/dashboard');
+            }
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Signup failed. Please try again.');
         } finally {
@@ -41,219 +59,410 @@ export default function SignupPage() {
         }
     };
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+
+        // Real-time validation
+        let isValid = false;
+        switch (name) {
+            case 'name':
+                isValid = value.trim().length >= 2;
+                break;
+            case 'email':
+                isValid = validateEmail(value);
+                break;
+            case 'mobile':
+                isValid = value.trim().length >= 10;
+                break;
+            case 'password':
+                isValid = value.length >= 6;
+                break;
+        }
+
+        setFieldValidation(prev => ({
+            ...prev,
+            [name]: isValid
+        }));
+    };
+
+    const passwordStrength = getPasswordStrength(formData.password);
+
     return (
-        <div className="min-h-screen flex">
-            {/* LEFT SIDE - Hero Section */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-500 relative overflow-hidden">
-                {/* Animated background elements */}
-                <div className="absolute inset-0">
-                    <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
-                    <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-                    <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="min-h-screen w-full bg-[#F7F9FC] flex items-center justify-center p-4 md:p-8">
+            {/* Main Card Container */}
+            <div className="w-full max-w-[940px] bg-white rounded-[24px] shadow-[0_8px_32px_rgba(36,107,253,0.08)] overflow-hidden flex flex-col md:flex-row">
+
+                {/* LEFT PANEL - Form Area */}
+                <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+                    <div className="max-w-[360px] mx-auto w-full">
+                        {/* Header */}
+                        <div className="mb-8">
+                            <h1 className="text-[28px] md:text-[32px] font-bold text-[#1A202C] mb-2 leading-tight" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                Create an account
+                            </h1>
+                            <p className="text-[#718096] text-[15px]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                Let's get started with your 30-day free trial.
+                            </p>
+                            {/* Trust Badge */}
+                            <div className="flex items-center gap-2 mt-3">
+                                <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                <span className="text-[12px] text-[#718096]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    No credit card required
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 animate-shake">
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Form */}
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* Name Field */}
+                            <div>
+                                <label className="block text-[#4A5568] text-[13px] font-medium mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Name
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-3 bg-white border rounded-lg text-[#2D3748] placeholder-[#A0AEC0] focus:outline-none focus:border-[#246BFD] focus:ring-2 focus:ring-[#246BFD]/10 transition-all ${formData.name && (fieldValidation.name ? 'border-[#10B981] pr-12' : 'border-[#E2E8F0]')
+                                            } ${!formData.name && 'border-[#E2E8F0]'}`}
+                                        placeholder="Enter your name"
+                                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                                    />
+                                    {formData.name && fieldValidation.name && (
+                                        <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#10B981] animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Email Field */}
+                            <div>
+                                <label className="block text-[#4A5568] text-[13px] font-medium mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Email
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        required
+                                        className={`w-full px-4 py-3 bg-white border rounded-lg text-[#2D3748] placeholder-[#A0AEC0] focus:outline-none focus:border-[#246BFD] focus:ring-2 focus:ring-[#246BFD]/10 transition-all ${formData.email && (fieldValidation.email ? 'border-[#10B981] pr-12' : 'border-[#E2E8F0]')
+                                            } ${!formData.email && 'border-[#E2E8F0]'}`}
+                                        placeholder="Enter your email"
+                                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                                    />
+                                    {formData.email && fieldValidation.email && (
+                                        <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#10B981] animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Mobile Field */}
+                            <div>
+                                <label className="block text-[#4A5568] text-[13px] font-medium mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Mobile
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="tel"
+                                        name="mobile"
+                                        value={formData.mobile}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-3 bg-white border rounded-lg text-[#2D3748] placeholder-[#A0AEC0] focus:outline-none focus:border-[#246BFD] focus:ring-2 focus:ring-[#246BFD]/10 transition-all ${formData.mobile && (fieldValidation.mobile ? 'border-[#10B981] pr-12' : 'border-[#E2E8F0]')
+                                            } ${!formData.mobile && 'border-[#E2E8F0]'}`}
+                                        placeholder="Enter your mobile"
+                                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                                    />
+                                    {formData.mobile && fieldValidation.mobile && (
+                                        <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#10B981] animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Password Field */}
+                            <div>
+                                <label className="block text-[#4A5568] text-[13px] font-medium mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        required
+                                        minLength={6}
+                                        className={`w-full px-4 py-3 bg-white border rounded-lg text-[#2D3748] placeholder-[#A0AEC0] focus:outline-none focus:border-[#246BFD] focus:ring-2 focus:ring-[#246BFD]/10 transition-all ${formData.password && (fieldValidation.password ? 'border-[#10B981] pr-12' : 'border-[#E2E8F0]')
+                                            } ${!formData.password && 'border-[#E2E8F0]'}`}
+                                        placeholder="Enter your password"
+                                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                                    />
+                                    {formData.password && fieldValidation.password && (
+                                        <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#10B981] animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    )}
+                                </div>
+                                {/* Password Strength Indicator */}
+                                {formData.password && (
+                                    <div className="mt-2">
+                                        <div className="flex gap-1.5 mb-1">
+                                            <div className={`h-1 flex-1 rounded-full transition-all ${passwordStrength >= 1 ? (passwordStrength === 1 ? 'bg-red-400' : passwordStrength === 2 ? 'bg-yellow-400' : 'bg-green-500') : 'bg-gray-200'}`}></div>
+                                            <div className={`h-1 flex-1 rounded-full transition-all ${passwordStrength >= 2 ? (passwordStrength === 2 ? 'bg-yellow-400' : 'bg-green-500') : 'bg-gray-200'}`}></div>
+                                            <div className={`h-1 flex-1 rounded-full transition-all ${passwordStrength >= 3 ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                                        </div>
+                                        <p className="text-[11px] text-[#718096]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                            {passwordStrength === 1 && 'Weak password'}
+                                            {passwordStrength === 2 && 'Good password'}
+                                            {passwordStrength === 3 && 'Strong password'}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Create Account Button */}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-gradient-to-r from-[#246BFD] to-[#1E4DD8] hover:from-[#1E4DD8] hover:to-[#246BFD] text-white font-semibold py-3.5 rounded-lg transition-all duration-200 shadow-lg shadow-[#246BFD]/20 hover:shadow-xl hover:shadow-[#246BFD]/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                            >
+                                {loading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Creating account...
+                                    </span>
+                                ) : 'Create account'}
+                            </button>
+
+                            {/* Google Sign Up Button */}
+                            <button
+                                type="button"
+                                className="w-full bg-white hover:bg-gray-50 text-[#2D3748] font-semibold py-3.5 rounded-lg border border-[#E2E8F0] transition-all duration-200 flex items-center justify-center gap-3 hover:border-[#246BFD]/30"
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                </svg>
+                                Sign up with Google
+                            </button>
+
+                            {/* Footer Attribution */}
+                            <div className="pt-4 text-center">
+                                <p className="text-[11px] text-[#A0AEC0]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    Designed by <span className="font-medium text-[#718096]">Alireza Yegane</span>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-                    {/* Icon */}
-                    <div className="mb-12 animate-fade-in">
-                        <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6">
-                            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+                {/* RIGHT PANEL - Premium Rocket Launch Animation */}
+                <div className="w-full md:w-1/2 bg-gradient-to-br from-[#246BFD] via-[#1E4DD8] to-[#1956C7] relative overflow-hidden min-h-[400px] md:min-h-full flex items-center justify-center p-8">
+                    {/* Animated Background Elements */}
+                    <div className="absolute inset-0">
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+                        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+                        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-white/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '3s' }}></div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                        {/* Rocket Launch Animation */}
+                        <div className="relative mb-12">
+                            {/* Rocket SVG */}
+                            <svg className="w-40 h-40 animate-rocket-launch" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {/* Rocket Body */}
+                                <g className="rocket-body">
+                                    {/* Main Body */}
+                                    <path d="M85 80 L85 140 L100 155 L115 140 L115 80 Q100 50 85 80Z" fill="white" stroke="white" strokeWidth="2" />
+
+                                    {/* Window */}
+                                    <circle cx="100" cy="90" r="12" fill="#246BFD" opacity="0.3" />
+                                    <circle cx="100" cy="90" r="8" fill="#246BFD" opacity="0.5" />
+
+                                    {/* Wings */}
+                                    <path d="M85 120 L60 145 L85 140 Z" fill="white" opacity="0.9" />
+                                    <path d="M115 120 L140 145 L115 140 Z" fill="white" opacity="0.9" />
+
+                                    {/* Top Cone */}
+                                    <path d="M85 80 Q100 45 115 80" fill="white" stroke="white" strokeWidth="2" />
+                                    <path d="M85 80 Q100 55 115 80" fill="#246BFD" opacity="0.2" />
+                                </g>
+
+                                {/* Fire/Exhaust */}
+                                <g className="rocket-fire">
+                                    <path d="M90 155 Q100 175 110 155" fill="#FFD700" opacity="0.8" className="animate-fire-1" />
+                                    <path d="M92 155 Q100 170 108 155" fill="#FFA500" opacity="0.7" className="animate-fire-2" />
+                                    <path d="M95 155 Q100 165 105 155" fill="#FF6B6B" opacity="0.6" className="animate-fire-3" />
+                                </g>
+
+                                {/* Stars */}
+                                <g className="stars">
+                                    <circle cx="40" cy="40" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '0s' }} />
+                                    <circle cx="160" cy="50" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '0.5s' }} />
+                                    <circle cx="30" cy="90" r="1.5" fill="white" className="animate-twinkle" style={{ animationDelay: '1s' }} />
+                                    <circle cx="170" cy="100" r="1.5" fill="white" className="animate-twinkle" style={{ animationDelay: '1.5s' }} />
+                                    <circle cx="50" cy="140" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '2s' }} />
+                                    <circle cx="150" cy="150" r="2" fill="white" className="animate-twinkle" style={{ animationDelay: '2.5s' }} />
+                                </g>
+
+                                {/* Trail Particles */}
+                                <g className="particles">
+                                    <circle cx="95" cy="170" r="3" fill="white" opacity="0.4" className="animate-particle-1" />
+                                    <circle cx="105" cy="175" r="2.5" fill="white" opacity="0.3" className="animate-particle-2" />
+                                    <circle cx="100" cy="180" r="2" fill="white" opacity="0.2" className="animate-particle-3" />
+                                </g>
                             </svg>
                         </div>
-                        <h1 className="text-3xl font-bold font-display mb-2">Start Your Journey</h1>
-                        <p className="text-xl text-white/90">
-                            Join the productivity revolution
-                        </p>
-                    </div>
 
-                    {/* Benefits */}
-                    <div className="space-y-6 mb-12 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                        <h2 className="text-4xl md:text-5xl font-bold font-display leading-tight">
-                            Your best days<br />start here
-                        </h2>
-                        <p className="text-lg text-white/90 leading-relaxed max-w-md">
-                            Experience the planning system that grows with you. No overwhelm, just progress.
-                        </p>
-                    </div>
+                        {/* Motivational Text */}
+                        <div className="text-center space-y-4 max-w-sm">
+                            <h3 className="text-white text-3xl font-bold leading-tight animate-fade-in-up" style={{ fontFamily: 'Inter, system-ui, sans-serif', animationDelay: '0.2s' }}>
+                                Launch Your Success
+                            </h3>
+                            <p className="text-white/90 text-base leading-relaxed animate-fade-in-up" style={{ fontFamily: 'Inter, system-ui, sans-serif', animationDelay: '0.4s' }}>
+                                Join thousands achieving more with focused planning and clear goals
+                            </p>
 
-                    {/* What you get */}
-                    <div className="space-y-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-                        <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">What you'll get</h3>
-                        {[
-                            { icon: '🎁', text: '14-day free trial, no credit card required' },
-                            { icon: '💎', text: 'All premium features unlocked ' },
-                            { icon: '🔒', text: 'Your data stays private & secure' },
-                            { icon: '💪', text: 'Cancel anytime, keep your progress' }
-                        ].map((benefit, i) => (
-                            <div key={i} className="flex items-center gap-3 group">
-                                <span className="text-2xl group-hover:scale-110 transition-transform duration-200">{benefit.icon}</span>
-                                <span className="text-white/90 group-hover:text-white transition-colors">{benefit.text}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Testimonial */}
-                    <div className="mt-16 pt-8 border-t border-white/20 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-                        <blockquote className="text-white/90 italic mb-3">
-                            "Finally, a planner that actually helps me stay focused. Game changer for my ADHD brain."
-                        </blockquote>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/20" />
-                            <div>
-                                <div className="text-sm font-semibold">Sarah Chen</div>
-                                <div className="text-xs text-white/70">Product Designer</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* RIGHT SIDE - Signup Form */}
-            <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-emerald-50/20">
-                <div className="w-full max-w-md animate-scale-in">
-                    {/* Mobile logo */}
-                    <div className="lg:hidden text-center mb-8">
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-display">
-                            Deep Focus Planner
-                        </h1>
-                        <p className="text-neutral-600 mt-2">Your productivity companion</p>
-                    </div>
-
-                    {/* Welcome message */}
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-neutral-900 font-display mb-2">
-                            Let's get started! 🚀
-                        </h2>
-                        <p className="text-neutral-600">
-                            Create your account in 30 seconds
-                        </p>
-                    </div>
-
-                    {/* Error message */}
-                    {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-slide-up">
-                            <div className="flex items-start gap-3">
-                                <svg className="w-5 h-5 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                </svg>
-                                <p className="text-sm text-red-800">{error}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Signup form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label htmlFor="fullName" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                Full name <span className="text-neutral-400 font-normal">(optional)</span>
-                            </label>
-                            <Input
-                                id="fullName"
-                                type="text"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                placeholder="John Doe"
-                                className="w-full bg-white border-neutral-200"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                Email address
-                            </label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                placeholder="you@example.com"
-                                className="w-full bg-white border-neutral-200"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                Password
-                            </label>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                placeholder="Create a strong password"
-                                className="w-full bg-white border-neutral-200"
-                            />
-                            {/* Password strength indicator */}
-                            {password && (
-                                <div className="mt-2 animate-fade-in">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs text-neutral-500">Password strength</span>
-                                        <span className={`text-xs font-semibold ${passwordStrength.color}`}>
-                                            {passwordStrength.label}
-                                        </span>
-                                    </div>
-                                    <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full transition-all duration-300 ${passwordStrength.label === 'Strong' ? 'bg-emerald-500' :
-                                                    passwordStrength.label === 'Good' ? 'bg-emerald-400' :
-                                                        passwordStrength.label === 'Weak' ? 'bg-orange-400' :
-                                                            'bg-red-400'
-                                                }`}
-                                            style={{ width: passwordStrength.width }}
-                                        />
-                                    </div>
+                            {/* Feature Pills */}
+                            <div className="flex flex-wrap gap-2 justify-center pt-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm border border-white/20" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    ✓ Free forever
                                 </div>
-                            )}
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm border border-white/20" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    ✓ No credit card
+                                </div>
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm border border-white/20" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    ✓ 30-day trial
+                                </div>
+                            </div>
                         </div>
-
-                        <Button
-                            type="submit"
-                            loading={loading}
-                            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200"
-                            size="lg"
-                        >
-                            {loading ? 'Creating your account...' : 'Create free account →'}
-                        </Button>
-
-                        <p className="text-xs text-center text-neutral-500">
-                            By signing up, you agree to our{' '}
-                            <a href="#" className="text-emerald-600 hover:text-emerald-500 font-medium">Terms</a>
-                            {' '}and{' '}
-                            <a href="#" className="text-emerald-600 hover:text-emerald-500 font-medium">Privacy Policy</a>
-                        </p>
-                    </form>
-
-                    {/* Divider */}
-                    <div className="relative my-8">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-neutral-200" />
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-gradient-to-br from-slate-50 to-emerald-50/20 text-neutral-500">
-                                Already have an account?
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Sign in link */}
-                    <div className="text-center">
-                        <a
-                            href="/login"
-                            className="text-emerald-600 hover:text-emerald-500 transition-colors font-semibold"
-                        >
-                            Sign in instead →
-                        </a>
                     </div>
                 </div>
             </div>
+
+            {/* Custom CSS Animations */}
+            <style jsx>{`
+                @keyframes rocket-launch {
+                    0%, 100% { transform: translateY(0px) rotate(0deg); }
+                    50% { transform: translateY(-15px) rotate(-2deg); }
+                }
+                @keyframes fire-1 {
+                    0%, 100% { opacity: 0.8; transform: scaleY(1); }
+                    50% { opacity: 0.4; transform: scaleY(1.3); }
+                }
+                @keyframes fire-2 {
+                    0%, 100% { opacity: 0.7; transform: scaleY(1); }
+                    50% { opacity: 0.3; transform: scaleY(1.4); }
+                }
+                @keyframes fire-3 {
+                    0%, 100% { opacity: 0.6; transform: scaleY(1); }
+                    50% { opacity: 0.2; transform: scaleY(1.5); }
+                }
+                @keyframes twinkle {
+                    0%, 100% { opacity: 0.3; transform: scale(1); }
+                    50% { opacity: 1; transform: scale(1.5); }
+                }
+                @keyframes particle-1 {
+                    0% { opacity: 0.4; transform: translateY(0px); }
+                    100% { opacity: 0; transform: translateY(30px); }
+                }
+                @keyframes particle-2 {
+                    0% { opacity: 0.3; transform: translateY(0px); }
+                    100% { opacity: 0; transform: translateY(35px); }
+                }
+                @keyframes particle-3 {
+                    0% { opacity: 0.2; transform: translateY(0px); }
+                    100% { opacity: 0; transform: translateY(40px); }
+                }
+                @keyframes scale-in {
+                    0% { opacity: 0; transform: scale(0); }
+                    50% { transform: scale(1.2); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                @keyframes fade-in-up {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .animate-rocket-launch {
+                    animation: rocket-launch 3s ease-in-out infinite;
+                }
+                .animate-fire-1 {
+                    animation: fire-1 0.3s ease-in-out infinite;
+                    transform-origin: top center;
+                }
+                .animate-fire-2 {
+                    animation: fire-2 0.4s ease-in-out infinite;
+                    transform-origin: top center;
+                }
+                .animate-fire-3 {
+                    animation: fire-3 0.5s ease-in-out infinite;
+                    transform-origin: top center;
+                }
+                .animate-twinkle {
+                    animation: twinkle 2s ease-in-out infinite;
+                }
+                .animate-particle-1 {
+                    animation: particle-1 1.5s ease-out infinite;
+                }
+                .animate-particle-2 {
+                    animation: particle-2 1.7s ease-out infinite;
+                }
+                .animate-particle-3 {
+                    animation: particle-3 1.9s ease-out infinite;
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .animate-shake {
+                    animation: shake 0.4s ease-in-out;
+                }
+                .animate-fade-in-up {
+                    animation: fade-in-up 0.8s ease-out forwards;
+                    opacity: 0;
+                }
+            `}</style>
         </div>
     );
 }
-
-
