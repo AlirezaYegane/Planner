@@ -16,6 +16,12 @@ class Task(Base):
     priority = Column(String(50), default="medium", nullable=False)  # low, medium, high, urgent
     date = Column(Date, nullable=True, index=True)
     
+    # Gamification fields
+    estimated_time = Column(Integer, nullable=True)  # in minutes
+    actual_time = Column(Integer, nullable=True)  # in minutes
+    points_value = Column(Integer, default=0, nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
@@ -28,6 +34,8 @@ class Task(Base):
     group = relationship("Group", back_populates="tasks")
     team = relationship("Team", back_populates="tasks")
     subtasks = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
+    focus_sessions = relationship("FocusSession", back_populates="task", cascade="all, delete-orphan")
+    history = relationship("TaskHistory", back_populates="task", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Task(id={self.id}, name='{self.name}', status='{self.status}')>"

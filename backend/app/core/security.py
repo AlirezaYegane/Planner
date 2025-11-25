@@ -58,3 +58,25 @@ def verify_token(token: str) -> Optional[str]:
         return user_id
     except JWTError:
         return None
+
+
+def create_verification_token() -> str:
+    """
+    Create a secure random token for email verification.
+    
+    Returns:
+        Secure random token string (URL-safe)
+    """
+    import secrets
+    return secrets.token_urlsafe(32)
+
+
+def create_reset_token() -> str:
+    """
+    Create a secure random token for password reset.
+    
+    Returns:
+        Secure random token string (URL-safe)
+    """
+    import secrets
+    return secrets.token_urlsafe(32)

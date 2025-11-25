@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import { setToken, setUser } from '@/store/slices/userSlice';
+import { OAuthButton } from '@/components/auth/OAuthButton';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -78,6 +80,14 @@ export default function LoginPage() {
         }
     };
 
+    const handleGoogleLogin = () => {
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/auth/google`;
+    };
+
+    const handleAppleLogin = () => {
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/auth/apple`;
+    };
+
     return (
         <div className="min-h-screen w-full bg-[#F7F9FC] flex items-center justify-center p-4 md:p-8">
             {/* Main Card Container */}
@@ -135,9 +145,9 @@ export default function LoginPage() {
                                     <label className="block text-[#4A5568] text-[13px] font-medium" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                                         Password
                                     </label>
-                                    <a href="#" className="text-[12px] text-[#246BFD] hover:text-[#1E4DD8] font-medium transition-colors" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    <Link href="/forgot-password" className="text-[12px] text-[#246BFD] hover:text-[#1E4DD8] font-medium transition-colors" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                                         Forgot password?
-                                    </a>
+                                    </Link>
                                 </div>
                                 <div className="relative">
                                     <input
@@ -194,8 +204,24 @@ export default function LoginPage() {
                                 ) : 'Log in'}
                             </button>
 
+                            {/* Divider */}
+                            <div className="relative my-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-[#E2E8F0]"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-4 bg-white text-[#718096]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>Or continue with</span>
+                                </div>
+                            </div>
+
+                            {/* OAuth Buttons */}
+                            <div className="space-y-3">
+                                <OAuthButton provider="google" onClick={handleGoogleLogin} />
+                                <OAuthButton provider="apple" onClick={handleAppleLogin} />
+                            </div>
+
                             {/* Sign up link */}
-                            <div className="text-center">
+                            <div className="text-center pt-4 border-t border-gray-100">
                                 <p className="text-[13px] text-[#718096]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                                     Don't have an account?{' '}
                                     <a href="/signup" className="text-[#246BFD] hover:text-[#1E4DD8] font-semibold transition-colors">

@@ -1,11 +1,15 @@
+
 // TypeScript types for the application
 
 export interface User {
     id: number;
     email: string;
+    username?: string;
     full_name?: string;
     is_active: boolean;
     is_superuser: boolean;
+    email_verified: boolean;
+    provider: 'local' | 'google' | 'apple';
     created_at: string;
     updated_at: string;
 }
@@ -34,6 +38,11 @@ export interface Task {
     date?: string;
     user_id: number;
     group_id?: number;
+    // Gamification fields
+    estimated_time?: number;  // in minutes
+    actual_time?: number;  // in minutes
+    points_value: number;
+    completed_at?: string;
     created_at: string;
     updated_at: string;
     subtasks: Subtask[];
@@ -89,6 +98,8 @@ export interface TaskCreateRequest {
     priority?: Task['priority'];
     date?: string;
     group_id?: number;
+    estimated_time?: number;
+    actual_time?: number;
     subtasks?: Array<{ name: string; order: number }>;
 }
 
@@ -99,6 +110,8 @@ export interface TaskUpdateRequest {
     priority?: Task['priority'];
     date?: string;
     group_id?: number;
+    estimated_time?: number;
+    actual_time?: number;
 }
 
 export interface BoardCreateRequest {

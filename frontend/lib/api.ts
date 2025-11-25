@@ -102,6 +102,31 @@ class ApiClient {
         return response.data;
     }
 
+    // Email verification
+    async verifyEmail(token: string): Promise<{ message: string }> {
+        const response = await this.client.post<{ message: string }>('/auth/verify-email', { token });
+        return response.data;
+    }
+
+    async resendVerification(email: string): Promise<{ message: string }> {
+        const response = await this.client.post<{ message: string }>('/auth/resend-verification', { email });
+        return response.data;
+    }
+
+    // Password reset
+    async forgotPassword(email: string): Promise<{ message: string }> {
+        const response = await this.client.post<{ message: string }>('/auth/forgot-password', { email });
+        return response.data;
+    }
+
+    async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+        const response = await this.client.post<{ message: string }>('/auth/reset-password', {
+            token,
+            new_password: newPassword
+        });
+        return response.data;
+    }
+
     // Task endpoints
     async getTasks(params?: { date?: string; status?: string }): Promise<Task[]> {
         const response = await this.client.get<Task[]>('/tasks/', { params });

@@ -25,6 +25,31 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     
+    # Frontend URL
+    FRONTEND_URL: str = "http://localhost:3000"
+    
+    # Email Configuration
+    EMAIL_PROVIDER: str = "sendgrid"  # sendgrid or smtp
+    SENDGRID_API_KEY: str = ""
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAIL_FROM: str = "noreply@deepfocusplanner.com"
+    EMAIL_FROM_NAME: str = "Deep Focus Planner"
+    
+    # OAuth Configuration
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    APPLE_CLIENT_ID: str = ""
+    APPLE_TEAM_ID: str = ""
+    APPLE_KEY_ID: str = ""
+    APPLE_PRIVATE_KEY: str = ""
+    
+    # Token Expiry
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
+    PASSWORD_RESET_EXPIRE_HOURS: int = 1
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

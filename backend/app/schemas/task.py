@@ -44,6 +44,8 @@ class TaskBase(BaseModel):
     status: str = "not_started"  # not_started, in_progress, done, postponed
     priority: str = "medium"  # low, medium, high, urgent
     date: Optional[date] = None
+    estimated_time: Optional[int] = None  # in minutes
+    actual_time: Optional[int] = None  # in minutes
 
 
 class TaskCreate(TaskBase):
@@ -60,6 +62,8 @@ class TaskUpdate(BaseModel):
     priority: Optional[str] = None
     date: Optional[date] = None
     group_id: Optional[int] = None
+    estimated_time: Optional[int] = None
+    actual_time: Optional[int] = None
 
 
 class TaskResponse(TaskBase):
@@ -67,6 +71,8 @@ class TaskResponse(TaskBase):
     id: int
     user_id: int
     group_id: Optional[int] = None
+    points_value: int = 0
+    completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     subtasks: List[SubtaskResponse] = []

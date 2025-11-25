@@ -5,6 +5,8 @@ import tasksReducer from './slices/tasksSlice';
 import boardsReducer from './slices/boardsSlice';
 import plansReducer from './slices/plansSlice';
 import teamsReducer from './slices/teamsSlice';
+import gamificationReducer from './slices/gamificationSlice';
+import historyReducer from './slices/historySlice';
 
 export const store = configureStore({
     reducer: {
@@ -13,6 +15,8 @@ export const store = configureStore({
         boards: boardsReducer,
         plans: plansReducer,
         teams: teamsReducer,
+        gamification: gamificationReducer,
+        history: historyReducer,
     },
 });
 
