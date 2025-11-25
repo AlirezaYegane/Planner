@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAppSelector } from '@/store/store';
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -19,7 +20,14 @@ export default function SignupPage() {
         mobile: false,
         password: false
     });
+    const { isAuthenticated, loading: authLoading } = useAppSelector((state) => state.user);
     const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, authLoading, router]);
 
     const validateEmail = (email: string) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

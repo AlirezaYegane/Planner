@@ -12,7 +12,7 @@ const initialState: UserState = {
     user: null,
     token: null,
     isAuthenticated: false,
-    loading: false,
+    loading: true,
 };
 
 const userSlice = createSlice({
@@ -25,6 +25,7 @@ const userSlice = createSlice({
         },
         setToken: (state, action: PayloadAction<string>) => {
             state.token = action.payload;
+            // Don't set isAuthenticated here - wait for setUser to verify token is valid
         },
         logout: (state) => {
             state.user = null;

@@ -7,6 +7,7 @@ from app.core.security import verify_password, get_password_hash, create_access_
 from app.core.config import settings
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -123,3 +124,14 @@ def login_json(user_data: dict, db: Session = Depends(get_db)):
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    """
+    Get current authenticated user profile.
+    
+    Requires valid JWT token in Authorization header.
+    Returns the user's profile information.
+    """
+    return current_user

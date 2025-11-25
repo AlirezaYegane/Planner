@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './main.css';
 import { ReduxProvider } from '@/store/ReduxProvider';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -28,7 +29,9 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
             <body className="font-sans bg-slate-950 text-white antialiased selection:bg-blue-500/30">
-                <ReduxProvider>{children}</ReduxProvider>
+                <ReduxProvider>
+                    <AuthProvider>{children}</AuthProvider>
+                </ReduxProvider>
             </body>
         </html>
     );

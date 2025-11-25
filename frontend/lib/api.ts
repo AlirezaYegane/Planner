@@ -43,12 +43,11 @@ class ApiClient {
         this.client.interceptors.response.use(
             (response) => response,
             (error: AxiosError) => {
+                // Don't automatically redirect on 401 - let components handle it
+                // This prevents race conditions during auth initialization
                 if (error.response?.status === 401) {
-                    // Token expired or invalid
+                    // Clear invalid token but don't force redirect
                     this.clearToken();
-                    if (typeof window !== 'undefined') {
-                        window.location.href = '/login';
-                    }
                 }
                 return Promise.reject(error);
             }
@@ -96,6 +95,11 @@ class ApiClient {
 
     logout(): void {
         this.clearToken();
+    }
+
+    async getMe(): Promise<User> {
+        const response = await this.client.get<User>('/auth/me');
+        return response.data;
     }
 
     // Task endpoints

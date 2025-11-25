@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { useAppDispatch } from '@/store/store';
-import { setToken } from '@/store/slices/userSlice';
+import { useAppDispatch, useAppSelector } from '@/store/store';
+import { setToken, setUser } from '@/store/slices/userSlice';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -16,8 +16,15 @@ export default function LoginPage() {
         email: false,
         password: false
     });
+    const { isAuthenticated, loading: authLoading } = useAppSelector((state) => state.user);
     const router = useRouter();
     const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        if (!authLoading && isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, authLoading, router]);
 
     useEffect(() => {
         setError('');
@@ -55,7 +62,13 @@ export default function LoginPage() {
 
             if (token && token.access_token) {
                 dispatch(setToken(token.access_token));
-                window.location.href = '/dashboard';
+
+                // Fetch user data to set isAuthenticated
+                const userData = await api.getMe();
+                dispatch(setUser(userData));
+
+                // Use router.push for proper Next.js client-side navigation
+                router.push('/dashboard');
             } else {
                 throw new Error('Invalid response from server');
             }
